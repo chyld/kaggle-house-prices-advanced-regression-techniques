@@ -2,15 +2,21 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from tensorflow.keras.callbacks import Callback
+import tensorflow as tf
+from tensorflow.keras.metrics import mean_squared_error
 
 
-class MyLogger(Callback):
+class Logger(Callback):
     def __init__(self, n):
         self.n = n
 
     def on_epoch_end(self, epoch, logs={}):
         if epoch % self.n == 0:
             print("epoch:", epoch, logs)
+
+
+def rmse(y, y_hat):
+    return tf.math.sqrt(mean_squared_error(y, y_hat))
 
 
 def eda(df, is_train=True):
