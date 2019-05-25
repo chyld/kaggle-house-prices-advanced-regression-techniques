@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from tensorflow.keras.callbacks import Callback
 import tensorflow as tf
 from tensorflow.keras.metrics import mean_squared_error
@@ -19,7 +19,36 @@ def rmse(y, y_hat):
     return tf.math.sqrt(mean_squared_error(y, y_hat))
 
 
-def eda(df, is_train=True):
+def eda(df, is_train=True, ohe=None, columns=None):
+    df = df.copy()
+
+    quals = [c for c in df.columns if df.dtypes[c] == "O"]
+    quants = [c for c in df.columns if df.dtypes[c] != "O"]
+
+    df[quals] = df[quals].fillna("MISSING")
+    for quant in quants:
+        df[quant] = df[quant].fillna(df[quant].median())
+
+    if is_train:
+        ohe = OneHotEncoder(sparse=False, handle_unknown="ignore")
+        ohe.fit(df[quals])
+
+    one_hot_array = ohe.transform(df[quals])
+    one_hot_labels = [f"{label}_{c}" for label, cat in zip(quals, ohe.categories_) for c in cat]
+    one_hot_df = pd.DataFrame(one_hot_array, columns=one_hot_labels)
+
+    y = None
+    if is_train:
+        y = df.pop("SalePrice")
+        quants.remove("SalePrice")
+
+    X_temp = pd.concat([df[quants], one_hot_df], axis=1)
+    X = X_temp if is_train else X_temp[columns]
+
+    return X, y, ohe
+
+
+def eda_old(df, is_train=True):
     df = df.copy()
 
     # 1 missing
@@ -213,7 +242,6 @@ def eda(df, is_train=True):
             "BsmtFinSF2",
             "BsmtHalfBath",
             "MiscVal",
-            "Id",
             "LowQualFinSF",
             "YrSold",
             "OverallCond",
