@@ -1,0 +1,6 @@
+price,sqft,rooms,housetype,floortype
+3,2,4,brick,carpet
+4,,6,mud,carpet
+5,1,,,
+6,,7,mud,tile
+7,3,8,sand,tile

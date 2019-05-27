@@ -19,33 +19,29 @@ def rmse(y, y_hat):
     return tf.math.sqrt(mean_squared_error(y, y_hat))
 
 
-def eda(df, is_train=True, ohe=None, columns=None):
+def fill_missing(df):
     df = df.copy()
 
-    quals = [c for c in df.columns if df.dtypes[c] == "O"]
     quants = [c for c in df.columns if df.dtypes[c] != "O"]
-
-    df[quals] = df[quals].fillna("MISSING")
     for quant in quants:
         df[quant] = df[quant].fillna(df[quant].median())
 
-    if is_train:
-        ohe = OneHotEncoder(sparse=False, handle_unknown="ignore")
-        ohe.fit(df[quals])
+    quals = [c for c in df.columns if df.dtypes[c] == "O"]
+    df[quals] = df[quals].fillna("MISSING")
 
-    one_hot_array = ohe.transform(df[quals])
-    one_hot_labels = [f"{label}_{c}" for label, cat in zip(quals, ohe.categories_) for c in cat]
+    return df, quants, quals
+
+
+def one_hot(df, columns, ohe=None):
+    if ohe is None:
+        ohe = OneHotEncoder(sparse=False, handle_unknown="ignore")
+        ohe.fit(df[columns])
+
+    one_hot_array = ohe.transform(df[columns])
+    one_hot_labels = [f"{label}_{c}" for label, cat in zip(columns, ohe.categories_) for c in cat]
     one_hot_df = pd.DataFrame(one_hot_array, columns=one_hot_labels)
 
-    y = None
-    if is_train:
-        y = df.pop("SalePrice")
-        quants.remove("SalePrice")
-
-    X_temp = pd.concat([df[quants], one_hot_df], axis=1)
-    X = X_temp if is_train else X_temp[columns]
-
-    return X, y, ohe
+    return one_hot_df, ohe
 
 
 def eda_old(df, is_train=True):
@@ -317,13 +313,18 @@ def eda_old(df, is_train=True):
     return X, y
 
 
-def process(X, y=None):
+def process(X, y=None, scaler=None):
     # poly = PolynomialFeatures(degree=2).fit(X)
     # X_poly = poly.transform(X)
-    scaler = StandardScaler().fit(X)
+
+    if y is not None:
+        scaler = StandardScaler().fit(X)
     X = scaler.transform(X)
+
     # pca = PCA(n_components=100).fit(X_scaled)
     # X_pca = pca.transform(X_scaled)
+
     if y is not None:
         y = np.log(y)
+
     return X, y
