@@ -1,0 +1,7 @@
+{
+  "binary": "/home/chyld/.conda/envs/py37/bin/pyre.bin",
+  "source_directories": [
+    "."
+  ],
+  "typeshed": "/home/chyld/.conda/envs/py37/lib/pyre_check/typeshed/"
+}
